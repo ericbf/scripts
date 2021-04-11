@@ -10,11 +10,14 @@ shrink() {
 		exit -1
 	fi
 
-	ffmpeg -v quiet -i "$input" -pix_fmt yuv420p -vcodec libx264 -x264-params log-level=error -crf 28 "$reduced"
-
+	if ! ffmpeg -v quiet -i "$input" -pix_fmt yuv420p -vcodec libx264 -x264-params log-level=error -crf 28 "$reduced"; then
+		echo "Error reducing size of video"
+		exit -1
+	fi
+	
 	if [ $(du -k "$reduced" | cut -f 1) -lt $(du -k "$input" | cut -f 1) ]; then
 		# Move the old file to the trash and use the reduced file.
-		if ! osascript -e "tell application \"Finder\" to delete POSIX file \"${input}\"" > /dev/null ; then
+		if ! osascript -e "tell application \"Finder\" to delete POSIX file \"${input}\"" &> /dev/null ; then
 			# If trashing fails, move to trash manually
 			mv "$input" ~/.Trash
 		fi
@@ -24,15 +27,10 @@ shrink() {
 		# The "reduced" file is bigger—just delete it.
 		rm "$reduced"
 	fi
+
+	echo Done with $input
 }
 
-if [ "X$1" = "X-r" ]; then
-	shift
-
-	export -f shrink
-	find "$@" -type f -print0 | xargs -0 file --mime-type | egrep 'image|video' | cut -f1 -d : | tr '\n' '\0' | xargs -0 -P 6 -I{} bash -c 'shrink "{}"'
-else
-	export -f shrink
-	printf '%s\0' "$@" | xargs -0 -P 6 -I{} bash -c 'shrink "{}"'
-fi
+export -f shrink
+find "$@" -type f -print0 | xargs -0 file --mime-type | egrep 'image|video' | cut -f1 -d : | tr '\n' '\0' | xargs -0 -P 6 -I{} bash -c 'shrink "{}"'
 

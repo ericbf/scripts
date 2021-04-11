@@ -1,0 +1,6 @@
+#!/bin/zsh
+
+while [ $# -gt 0 ]; do
+	ffmpeg -i "$1" -vn -c:a libmp3lame -q:a 1 "${1:r}.mp3"
+	shift
+done

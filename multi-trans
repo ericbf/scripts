@@ -1,0 +1,8 @@
+#! /bin/zsh
+
+if [[ "$1-" =~ "^-.+" ]]; then
+	source="${1:1}"
+	shift
+fi
+
+trans -b $source:af+id+ru+am+ig+sd+ar+is+si+az+it+sk+ba+ja+sl+be+jv+sm+bg+ka+sn+bn+kk+so+bs+km+sq+ca+kn+sr-Cyrl+ceb+ko+sr-Latn+co+ku+st+cs+ky+su+cy+la+sv+da+lb+sw+de+lo+ta+el+lt+te+emj+lv+tg+mg+th+eo+mhr+tl+es+mi+tlh+et+mk+tlh-Qaak+eu+ml+to+fa+mn+tr+fi+mr+tt+fj+mrj+ty+fr+ms+udm+fy+mt+uk+ga+mww+ur+gd+my+uz+gl+ne+vi+gu+nl+xh+ha+no+yi+haw+ny+yo+he+otq+yua+hi+pa+yue+hmn+pap+zh-CN+hr+pl+zh-TW+ht+ps+zu+hu+pt+hy+ro+en $@

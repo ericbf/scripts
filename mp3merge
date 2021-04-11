@@ -1,0 +1,22 @@
+#!/bin/zsh
+
+declare files=""
+declare delimiter="-"
+
+if [ $1 = "-d" ]; then
+	shift
+	delimiter="$1"
+	shift
+fi
+
+declare name="$1"
+
+while [ $# -gt 0 ]; do
+	files="${files}|${1}"
+
+	shift
+done
+
+if [ $files ]; then
+	ffmpeg -i "concat:${files:1}" -acodec copy "${name%${delimiter}*}.mp3"
+fi

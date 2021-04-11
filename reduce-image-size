@@ -1,0 +1,164 @@
+#!/usr/bin/env node
+
+const { promises: fs } = require("fs")
+const { basename, extname } = require("path")
+const { exec: originalExec } = require("child_process")
+
+/**
+ * Execute a script and return a promise that resolves to stdout, or catches with stderr.
+ * @param {string} command What to execute
+ * @returns {Promise<string>}
+ */
+async function exec(command) {
+	return new Promise((resolve, reject) => {
+		originalExec(command, (error, stdout, stderr) => {
+			if (error) {
+				reject(stderr)
+			} else {
+				resolve(stdout)
+			}
+		})
+	})
+}
+
+async function run() {
+	let currentTarget = 1
+
+	if (process.argv.length == 2) {
+		exit(-1)
+	}
+
+	const args = process.argv.slice(2)
+
+	let running = 0
+	let pipe = []
+
+	while (args.length > 0) {
+		const arg = args.shift()
+
+		if (arg.startsWith("-s")) {
+			const size = arg.split("=")[1]
+
+			currentTarget = parseFloat(size ?? args.shift())
+		} else {
+			switch (arg) {
+				case "-h":
+				case "--help":
+				case "-?":
+					exit()
+
+					break
+				default: {
+					const size = await sizeOf(arg)
+
+					if (size < currentTarget * 1000000) {
+						console.log(`"${arg}" is already smaller than ${currentTarget}MB`)
+					} else {
+						let target = currentTarget
+
+						pipe.push(async () => {
+							running += 1
+
+							try {
+								await resize(
+									target * 1000000,
+									arg,
+									`${arg.replace(/\.[^.]+$/, "")} (${currentTarget}MB)${extname(arg)}`,
+									0,
+									100,
+									0,
+									size
+								)
+							} catch (error) {
+								console.error(`Failed to resize ${arg}:`, error)
+							}
+
+							running -= 1
+
+							if (pipe.length > 0) {
+								pipe.shift()()
+							}
+						})
+
+						if (running < 6) {
+							pipe.shift()()
+						}
+					}
+
+					break
+				}
+			}
+		}
+	}
+
+	async function sizeOf(/** @type {string} */ file) {
+		const stat = await fs.stat(file)
+
+		return stat.size
+	}
+
+	/**
+	 * @param {number} target The target size
+	 * @param {string} file
+	 * @param {string} outFile
+	 * @param {number} lowerBound
+	 * @param {number} upperBound
+	 * @param {number} iteration
+	 * @param {number} currentSize
+	 */
+	async function resize(
+		target = currentTarget,
+		file,
+		outFile,
+		lowerBound,
+		upperBound,
+		iteration,
+		currentSize
+	) {
+		/** A threshold below the target above which we can be satisfied with the size */
+		const lowerThreshold = target * 0.99
+		/** The midpoint between the lower and the upper limits */
+		const midpoint = (upperBound - lowerBound) / 2 + lowerBound
+
+		// Resize the image to the midpoint between the current thresholds
+		await exec(`convert "${file}" -resize "${midpoint}%" "${outFile}"`)
+
+		// How big is it now?
+		const size = await sizeOf(outFile)
+
+		if (size > target) {
+			return resize(
+				target,
+				file,
+				outFile,
+				currentSize === size ? lowerBound / 2 : lowerBound,
+				midpoint,
+				iteration + 1,
+				currentSize
+			)
+		} else if (size < lowerThreshold && iteration < 32) {
+			if (currentSize === size) {
+				return
+			}
+
+			return resize(
+				target,
+				file,
+				outFile,
+				midpoint,
+				upperBound,
+				iteration + 1,
+				currentSize
+			)
+		}
+	}
+
+	function exit(code = 0) {
+		console.error(
+			`Usage: ${basename(process.argv[1])} [-s <size-in-mb>] <paths-to-images...>`
+		)
+		process.exit(code)
+	}
+}
+
+module.exports = run()

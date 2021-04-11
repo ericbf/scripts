@@ -1,0 +1,87 @@
+#!/bin/zsh
+
+if [ $# -ne 1 ]; then
+	echo "Please pass a PDF file."
+
+	exit
+fi
+
+declare file="$1"
+declare name="$(basename $file)"
+declare len=$(pdf-page-count $file)
+
+if [ $len -lt 3 ]; then
+	echo "Need at least 3 pages to do a booklet"
+
+	exit
+fi
+
+function add {
+	declare page=$( [ $1 -le $len ] && echo $1 || echo 2 )
+
+	order="$order \"${page}_${name}\""
+}
+
+declare dir="$(pwd)"
+declare temp="$TMPDIR/life.ferreira.intersperse.$(uuidgen)"
+
+mkdir -p "$temp"
+cp $file $temp
+
+cd "$temp"
+
+sedja-console splitbyevery -f "$name" -o . -n 1 > /dev/null
+
+declare order=""
+declare end=$((len + 4 - (len % 4) - 1))
+
+add 2
+add 1
+add 2
+
+if ((end%2 == 0)); then
+	add 2
+else
+	add $end
+	end=$((end - 1))
+fi
+
+declare start=3
+
+[ $start -gt $end ] && exit
+
+add $end
+end=$((end - 1))
+
+
+for i in {1..$((len / 2))}; do
+	add $start
+	start=$((start + 1))
+
+	[ $start -gt $end ] && break
+
+	add $start
+	start=$((start + 1))
+
+	[ $start -gt $end ] && break
+
+	add $end
+	end=$((end - 1))
+
+	[ $start -gt $end ] && break
+
+	add $end
+	end=$((end - 1))
+
+	[ $start -gt $end ] && break
+done
+
+declare output="${name%.*}_interspersed.pdf"
+
+zsh -c "sedja-console merge -f $order -o '$output'"  > /dev/null
+
+cd "$dir"
+
+cp "$temp/$output" .
+
+rm -rf "$temp"

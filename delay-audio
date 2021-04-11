@@ -1,0 +1,14 @@
+#!/bin/zsh
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $(basename "$0") <offset-amount> <video-file>"
+    echo "    eg: $(basename "$0") 0.5 video.mp4"
+
+    exit
+fi
+
+declare offset="$1"
+declare input="$2"
+declare output="${input%.*} (audio synchronized).${input##*.}"
+
+ffmpeg -itsoffset "$offset" -i "$input" -i "$input" -vcodec copy -acodec copy -map 0:0 -map 1:1 -y "$output"

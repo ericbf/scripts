@@ -1,0 +1,15 @@
+#!/bin/zsh
+
+declare path="$1"
+
+if [ ! -e "$path" ]; then
+    path="$(launchctl-search "$path")"
+fi
+
+if [ -e "$path" ]; then
+    launchctl unload -w "$path"
+else
+    echo Service $1 not found
+
+    exit -1
+fi

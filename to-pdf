@@ -1,0 +1,33 @@
+#!/bin/zsh
+
+if [ $# -eq 0 ]; then
+	echo "Usage: $(basename "$0") <input-file...>"
+fi
+
+declare tmpdir="$TMPDIR/$(basename "$0")-$(uuidgen)"
+
+mkdir -p "$tmpdir"
+
+function cleanup {
+	rm -rf "$tmpdir"
+}
+
+trap cleanup EXIT
+
+while [ $# -gt 0 ]; do
+	declare file="$1"
+	declare name="${${file##*/}%%.*}"
+	declare temp1="$tmpdir/${name}1.svg"
+	declare temp2="$tmpdir/${name}2.svg"
+
+	if [ "${file%%.*}" = "svg" ]; then
+		cp "$file" "$temp1"
+	else
+		inkscape "$file" -o "$temp1"
+	fi
+
+	npx svgo "$temp1" -q -o "$temp2"
+	inkscape "$temp2" -o "$name.pdf"
+
+	shift
+done

@@ -1,0 +1,30 @@
+#!/bin/zsh
+
+declare ssl=$( [ "x$1" = "x--ssl" ] && echo 1 )
+declare start="$(pwd)"
+
+if [ $ssl ]; then
+    shift
+fi
+
+if [ $# -gt 0 ]; then
+    cd "$1"
+fi
+
+if [ $ssl ]; then
+    declare didExist="$([ -e server.pem ] && echo 0)"
+
+    if [ $didExist -ne 0 ]; then
+        openssl req -new -x509 -keyout server.pem -out server.pem -days 365 -nodes -subj "/C=US/ST=Georgia/L=Cumming/O=AT&T/OU=CDI/CN=eric@ferreia.life" &> /dev/null
+    fi
+
+    python -c "import BaseHTTPServer, SimpleHTTPServer; import ssl; httpd = BaseHTTPServer.HTTPServer(('0.0.0.0', 8000), SimpleHTTPServer.SimpleHTTPRequestHandler); httpd.socket = ssl.wrap_socket (httpd.socket, certfile='./server.pem', server_side=True); print('Serving HTTPS on 0.0.0.0 port 8000 ...'); httpd.serve_forever()"
+
+    if [ $didExist -ne 0 ]; then
+        rm server.pem
+    fi
+else
+    python -m SimpleHTTPServer
+fi
+
+cd "$dir"

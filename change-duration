@@ -1,0 +1,50 @@
+#!/bin/zsh
+
+declare target=60
+
+while [ $# -gt 0 ]; do
+    if [ "$1" = "-d" ] || [ "$1" = "--duration" ]; then
+        target=$2
+
+	    shift
+    else
+        declare input="$1"
+        declare input_duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$input")
+        declare diff=$(( $input_duration - $target ))
+
+        if (( $(echo "${diff#-} > 0.5" | bc -l) )); then
+            declare output="${1%.*} (${target}s).${1##*.}"
+            declare audio_shift=$(echo "l($(( $input_duration / $target )))/l(2)" | bc -l)
+            declare audio_command
+
+            while (( $(echo "$audio_shift != 0" | bc -l) )); do
+                declare factor=""
+
+                if (( $(echo "$audio_shift > 0" | bc -l) )); then
+                    factor=2
+                else
+                    factor=0.5
+                fi
+
+                if (( $(echo "${audio_shift#-} < 1" | bc -l) )); then
+                    factor=$(( $factor ** $audio_shift ))
+                    audio_shift=0
+                else
+                    if (( $(echo "$audio_shift > 0" | bc -l) )); then
+                        audio_shift=$(( $audio_shift - 1 ))
+                    else
+                        audio_shift=$(( $audio_shift + 1 ))
+                    fi
+                fi
+
+                audio_command="$audio_command,atempo=$factor"
+            done
+
+            ffmpeg -i "$input" -filter_complex "[0:v]setpts=$(( $target / $input_duration ))*PTS[v];[0:a]${audio_command#,}[a]" -map "[v]" -map "[a]" -y "$output" &
+        fi
+    fi
+
+    shift
+done
+
+wait

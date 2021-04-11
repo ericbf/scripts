@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+
+const { promises: fs } = require("fs")
+const { basename, dirname, join } = require("path")
+
+/**
+ * @param {string[]} files The files to rename
+ */
+async function run(...files) {
+	return Promise.all(
+		files.map((file) => {
+			const dir = dirname(file)
+			const base = basename(file)
+
+			const newBase = base
+				.replace(/-/g, " ")
+				.replace(/^[a-z]/, (m) => m.toUpperCase())
+				.replace(/\b[a-z]+/g, (word) => {
+					switch (word) {
+						case "of":
+						case "the":
+						case "from":
+						case "through":
+						case "in":
+							return word
+						default:
+							return `${word[0].toUpperCase()}${word.slice(1)}`
+					}
+				})
+				.replace(/ [A-G](#|b)?\.pdf/i, " - SongSelect Number Chart.pdf")
+
+			fs.rename(file, join(dir, newBase))
+		})
+	)
+}
+
+module.exports = run(...process.argv.slice(2))

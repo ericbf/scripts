@@ -1,0 +1,9 @@
+#!/bin/zsh
+
+declare file="$1"
+
+if [ $# -gt 1 ]; then
+    shift
+fi
+
+say "$@" -o "$file.aiff"; lame -m m "$file.aiff" "$file.mp3"; rm "$file.aiff"

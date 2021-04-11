@@ -1,0 +1,30 @@
+#!/bin/zsh
+
+if [ $# -ne 2 ]; then
+	echo "Usage: $(basename "$0") <from clone url> <to clone url>"
+	exit -1
+fi
+
+declare FROM="$1"
+declare TO="$2"
+
+vared -p "This is a destructive operation. You're going from $FROM to $TO. Are you sure you want to continue? y/N: " -c answer
+
+case $answer in
+	y|Y)
+
+	git config remote.origin.url "$FROM"
+	git fetch --all
+
+	for branch in $(git branch --all | grep "^\s*remotes/" | egrep --invert-match 'HEAD'); do
+		if [ -n "`git branch --list "${branch#remotes/*/}"`" ]; then
+			git branch -u "$branch" "${branch#remotes/*/}"
+		else
+			git branch "${branch#remotes/*/}" "$branch"
+		fi
+	done
+
+	git pull --all --ff-only
+	git config remote.origin.url "$TO"
+	git push -f --all
+esac

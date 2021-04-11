@@ -1,0 +1,5 @@
+#!/bin/zsh
+
+declare newVal=$(($(defaults read com.apple.finder CreateDesktop)?0:1))
+defaults write com.apple.finder CreateDesktop $newVal
+killall Finder

@@ -1,0 +1,26 @@
+#!/bin/zsh
+
+if [ $# -eq 0 ]; then
+	echo "Usage: $(basename "$0") <input-file...>"
+fi
+
+declare tmpdir="$TMPDIR/$(basename "$0")-$(uuidgen)"
+
+mkdir -p "$tmpdir"
+
+function cleanup {
+	rm -rf "$tmpdir"
+}
+
+trap cleanup EXIT
+
+while [ $# -gt 0 ]; do
+	declare file="$1"
+	declare name="${${file##*/}%%.*}"
+	declare temp="$tmpdir/$name.svg"
+
+	inkscape "$file" -o "$temp"
+	npx svgo "$temp" -q -o "$name.svg"
+
+	shift
+done

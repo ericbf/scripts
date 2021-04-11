@@ -1,0 +1,17 @@
+#!/bin/zsh
+
+if [ $# -le 2 ]; then
+	echo "Usage: $(basename "$0") <file> <from-pitch> <to-pitch>"
+	exit 0
+fi
+
+declare input="$1"
+declare audio_input="${1:r}.mp3"
+declare audio_output="${1:r} (${(C)3}).mp3"
+declare output="${1:r} (${(C)3}).${1:e}"
+declare cents=$(( $(cents-between "$2" "$3") * 100 ))
+
+ffmpeg -i "$1" -vn -c:a libmp3lame -q:a 1 "${1:r}.mp3"
+sox "$audio_input" "$audio_output" pitch $cents
+ffmpeg -i "$input" -i "$audio_output" -c:v copy -map 0:v:0 -map 1:a:0 "$output"
+rm "$audio_input" "$audio_output"

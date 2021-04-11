@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+
+const { promises: fs } = require("fs")
+const readline = require("readline")
+
+async function run() {
+	const rl = readline.createInterface({
+		input: process.stdin,
+		output: process.stdout,
+	})
+	const [regexString, replacement, ...files] = process.argv.slice(2)
+	const source = regexString.replace(/.*\/(.*)\/.*/, (_, r) => r)
+	const flags = regexString.replace(/.*\/([^\/]*)$/, (_, f) => f)
+	const regex = new RegExp(source, flags)
+
+	if (files.length > 0) {
+		rl.question(
+			`Rename "${files[0]}" to "${files[0].replace(
+				regex,
+				replacement
+			)}", and others? y/N: `,
+			(response) => {
+				rl.close()
+
+				if (/y(es)?/i.test(response)) {
+					for (const file of files) {
+						fs.rename(file, file.replace(regex, replacement))
+					}
+				}
+			}
+		)
+	}
+}
+
+module.exports = run()

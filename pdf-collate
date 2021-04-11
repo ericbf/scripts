@@ -1,0 +1,23 @@
+#!/bin/zsh
+
+tmp="$TMPDIR/pdf-split-reverse-collate-$(uuidgen)"
+
+# Make a temp dir
+mkdir -p "$tmp"
+
+function cleanup {
+	rm -rf "$tmp"
+}
+
+trap cleanup EXIT
+
+while [ $# -gt 0 ]; do
+	file="$(basename "$1")"
+	mid=$((($(pdfinfo "$1" | grep Pages | awk '{print $2}') + 1) / 2))
+	index=$(($mid + 1))
+
+	sedja-console splitbyevery --overwrite -f "$1" -o "$tmp" -n $mid
+	sedja-console alternatemix -f "$tmp/1_$file" "$tmp/${index}_$file" -o "${file:r} (collated).${file:e}" --reverseSecond
+
+	shift
+done

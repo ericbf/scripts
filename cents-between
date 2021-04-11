@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+
+async function run() {
+	const [,, start, end] = process.argv
+
+	const map = [
+		["a"],
+		["a#", "bb"],
+		["b"],
+		["c"],
+		["c#", "db"],
+		["d"],
+		["d#", "eb"],
+		["e"],
+		["f"],
+		["f#", "gb"],
+		["g"],
+		["g#", "ab"]
+	]
+
+	const startIndex = map.findIndex((n) => n.includes(start.toLowerCase()))
+	const endIndex = map.findIndex((n) => n.includes(end.toLowerCase()))
+
+	const lhs = startIndex
+	const rhs = endIndex < startIndex ? endIndex + 12 : endIndex
+
+	const up = rhs - lhs
+	const down = up - 12
+
+	const difference = Math.abs(up) < Math.abs(down) ? up : down
+
+	console.log(difference)
+
+	return difference
+}
+
+module.exports = run()

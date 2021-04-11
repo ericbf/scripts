@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+	echo "Usage: debounce [seconds-to-delay] <command> [...params]"
+	exit -1
+fi
+
+declare delay=5
+
+if [[ "$1" =~ ^[0-9]+$ ]]; then
+    delay=$1
+	shift
+fi
+
+declare id="$(uuidgen)"
+declare flag="${TMPDIR}${1//[\/:]/-}"
+
+echo "$id" > "$flag"
+
+{
+	sleep $delay
+
+	if [ "$id" = "$(cat $flag 2> /dev/null)" ]; then
+		rm "$flag"
+		"$@"
+	fi
+} &

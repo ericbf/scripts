@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+zip -d "$@" 'META-INF/*.SF' 'META-INF/*.RSA'

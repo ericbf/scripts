@@ -1,0 +1,5 @@
+#!/bin/zsh
+
+for branch in $(git branch --all | grep '^\s*remotes' | egrep --invert-match '(:?HEAD)$'); do
+    git branch --track "${branch##*origin/}" "$branch"
+done

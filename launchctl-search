@@ -1,0 +1,7 @@
+#!/bin/zsh
+
+if [ $UID -eq 0 ]; then
+	find $([ -d "/Library/LaunchAgents" ] && [ $UID -eq 0 ] && echo "/Library/LaunchAgents") $([ -d "/Library/LaunchDaemons" ] && [ $UID -eq 0 ] && echo "/Library/LaunchDaemons") -maxdepth 1 -type f -iname "*$1*" -print -quit
+else
+	find $([ -d "$HOME/Library/LaunchAgents" ] && echo "$HOME/Library/LaunchAgents") $([ -d "$HOME/Library/LaunchDaemons" ] && echo "$HOME/Library/LaunchDaemons") -maxdepth 1 -type f -iname "*$1*" -print -quit
+fi

@@ -1,0 +1,9 @@
+#!/bin/zsh
+
+while [ $# -gt 0 ]; do
+	declare file="$1"
+
+	vlc -I dummy "$file" ":sout=#transcode{vcodec=h264,acodec=mpga,ab=128,channels=2,samplerate=44100,scodec=none,soverlay}:standard{mux=mkv,access=file,dst="'"'"${file%.*}.mkv"'"'"}" vlc://quit
+
+	shift
+done

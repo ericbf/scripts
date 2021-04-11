@@ -1,0 +1,4 @@
+#!/bin/zsh
+
+man -t $* > "$*.ps" && open "$*.ps"
+rm -f "$*.ps"

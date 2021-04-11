@@ -1,0 +1,4 @@
+#!/bin/zsh
+
+git push origin origin/$1:refs/tags/$1
+git push origin :refs/heads/$1

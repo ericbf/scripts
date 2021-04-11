@@ -1,0 +1,112 @@
+#!/bin/zsh
+# rev4 - changes suggested by KownBash https://www.reddit.com/r/bash/comments/5cxfqw/i_wrote_a_simple_video_to_gif_bash_script_thought/da19gjz/
+
+# Usage function, displays valid arguments
+print-usage-and-exit() {
+    echo "Usage: $0 [<-f|--fps>[=| ]<fps, defaults to 20>] [<-w|--width>[=| ]<width, defaults to input width>] inputfile" 1>&2
+
+    exit 1
+}
+
+declare tmpdir="$TMPDIR/$(basename "$0")-$(uuidgen)"
+
+mkdir -p "$tmpdir"
+
+function cleanup {
+	rm -rf "$tmpdir"
+}
+
+trap cleanup EXIT
+
+declare passed_fps
+declare passed_width
+
+validate() {
+    if ! [[ "$2" =~ "^$1$" ]]; then
+        print-usage-and-exit
+    fi
+}
+
+while [[ $# > 0 ]]; do
+    case "$1" in
+        # Normal option processing
+        -f | --fps)
+            validate "[0-9]+" $2
+            passed_fps="$2"
+            shift
+            ;;
+        -w | --width)
+            validate "[0-9]+" $2
+            passed_width="$2"
+            shift
+            ;;
+
+        # Special cases
+        --)
+            break
+            ;;
+        # Split apart equal sign passed options
+        -*=*)
+            split=$1
+            shift
+            set -- "${split%=*}" "${split#*=}" "$@"
+            continue
+            ;;
+        --*|-?)
+            print-usage-and-exit
+            ;;
+
+        # Split apart combined short options
+        -*)
+            split=$1
+            shift
+            set -- $(echo "$split" | cut -c 2- | sed 's/./-& /g') "$@"
+            continue
+            ;;
+
+        # Done with options for current file
+        *)
+            if [ "X$1" = "X" ]; then
+                echo "Missing input file" 1>&2
+                print-usage-and-exit
+            fi
+
+            declare input="$1"
+
+            if ! [ -e "$input" ]; then
+                echo "Input file not found." 1>&2
+                print-usage-and-exit
+            fi
+
+            declare fps=${passed_fps:-20}
+            declare width=${passed_width:-$(ffprobe -v quiet -show_entries stream=width -of csv=p=0:s=x "$input")}
+
+            # Extract filename from input file without the extension
+            filename=$(basename "$input")
+            #extension="${filename##*.}"
+            filename="${filename%.*}.gif"
+
+            # Debug display to show what the script is using as inputs
+            echo "FPS: $fps"
+            echo "Width: $width"
+            echo "Input: $1"
+            echo "Output File Name: $filename"
+
+            # temporary file to store the first pass pallete
+            palette="$tmpdir/${${filename##*/}%%.*}.png"
+
+            # options to pass to ffmpeg
+            filters="fps=$fps,scale='min($width,iw)':-1:flags=lanczos"
+
+            # ffmpeg first pass
+            ffmpeg -v error -i "$input" -vf "$filters,palettegen" -y "$palette"
+
+            # ffmpeg second pass
+            ffmpeg -v error -i "$input" -i "$palette" -lavfi "$filters [x]; [x][1:v] paletteuse=dither=bayer:bayer_scale=3" -y "$filename"
+
+            echo "Output File Size: $(du -h "$filename" | cut -f1)"
+            ;;
+    esac
+
+    shift
+done

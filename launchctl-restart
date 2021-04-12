@@ -1,13 +1,13 @@
 #!/bin/zsh
 
-declare path="$1"
+declare service="$1"
 
-if [ ! -e "$path" ]; then
-    path="$(launchctl-search "$path")"
+if [ ! -e "$service" ]; then
+    service="$(launchctl-search "$service")"
 fi
 
-if [ -e "$path" ]; then
-    launchctl unload -w "$path"; launchctl load -w "$path"
+if [ -e "$service" ]; then
+    launchctl unload -w "$service"; launchctl load -w "$service"
 else
     exit -1
 fi

@@ -4,21 +4,15 @@ if [ $# -eq 0 ]; then
 	echo "Usage: $(basename "$0") <input-file...>"
 fi
 
-declare tmpdir="$TMPDIR/$(basename "$0")-$(uuidgen)"
-
-mkdir -p "$tmpdir"
-
-function cleanup {
-	rm -rf "$tmpdir"
-}
-
-trap cleanup EXIT
+declare tmp="$TMPDIR$(basename "$0")-$(uuidgen)"
+trap "rm -rf '$tmp';" EXIT
+mkdir -p "$tmp"
 
 while [ $# -gt 0 ]; do
 	declare file="$1"
 	declare name="${${file##*/}%%.*}"
-	declare temp1="$tmpdir/${name}1.svg"
-	declare temp2="$tmpdir/${name}2.svg"
+	declare temp1="$tmp/${name}1.svg"
+	declare temp2="$tmp/${name}2.svg"
 
 	if [ "${file%%.*}" = "svg" ]; then
 		cp "$file" "$temp1"

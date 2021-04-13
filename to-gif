@@ -1,22 +1,16 @@
 #!/bin/zsh
 # rev4 - changes suggested by KownBash https://www.reddit.com/r/bash/comments/5cxfqw/i_wrote_a_simple_video_to_gif_bash_script_thought/da19gjz/
 
+declare tmp="$TMP$(basename "$0")-$(uuidgen)"
+trap "rm -rf '$tmp';" EXIT
+mkdir -p "$tmp"
+
 # Usage function, displays valid arguments
 print-usage-and-exit() {
     echo "Usage: $0 [<-f|--fps>[=| ]<fps, defaults to 20>] [<-w|--width>[=| ]<width, defaults to input width>] inputfile" 1>&2
 
     exit 1
 }
-
-declare tmpdir="$TMPDIR/$(basename "$0")-$(uuidgen)"
-
-mkdir -p "$tmpdir"
-
-function cleanup {
-	rm -rf "$tmpdir"
-}
-
-trap cleanup EXIT
 
 declare passed_fps
 declare passed_width
@@ -93,7 +87,7 @@ while [[ $# > 0 ]]; do
             echo "Output File Name: $filename"
 
             # temporary file to store the first pass pallete
-            palette="$tmpdir/${${filename##*/}%%.*}.png"
+            palette="$tmp/${${filename##*/}%%.*}.png"
 
             # options to pass to ffmpeg
             filters="fps=$fps,scale='min($width,iw)':-1:flags=lanczos"

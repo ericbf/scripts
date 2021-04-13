@@ -5,9 +5,13 @@ if [ $# -le 2 ]; then
 	exit 0
 fi
 
+declare tmp="$TMPDIR$(basename "$0")-$(uuidgen)"
+trap "rm -rf '$tmp';" EXIT
+mkdir -p "$tmp"
+
 declare input="$1"
-declare audio_input="${1:r}.mp3"
-declare audio_output="${1:r} (${(C)3}).mp3"
+declare audio_input="$tmp/${1:r}.mp3"
+declare audio_output="$tmp/${1:r} (${(C)3}).mp3"
 declare output="${1:r} (${(C)3}).${1:e}"
 declare cents=$(( $(cents-between "$2" "$3") * 100 ))
 

@@ -1,0 +1,12 @@
+#!/bin/zsh
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $(basename "$0") <port>"
+	exit -1
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	lsof -i -n -P | grep :$1
+else
+	netstat -tulpn | grep $1
+fi

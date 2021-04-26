@@ -6,8 +6,10 @@ if [ ! -e "$service" ]; then
     service="$(launchctl-search "$service")"
 fi
 
-if [ -e "$service" ]; then
+if [ "$service" ] && [ -e "$service" ]; then
     launchctl unload -w "$service"; launchctl load -w "$service"
 else
+    echo Service $1 not found
+
     exit -1
 fi

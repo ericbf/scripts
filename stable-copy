@@ -1,0 +1,26 @@
+stableCopy() {
+	if [ -d "$1" ]; then
+		declare destination="$2/$(basename "$1")"
+
+		mkdir -p "$destination"
+
+		for file in "$1"/*; do
+			stableCopy "$file" "$destination"
+		done
+	else if [ -e "$1" ]; then
+		if [ -e "$2/$1" ]; then
+			echo -n Skipping
+		else
+			echo -n Copying
+		fi
+
+		echo " $1"
+
+		/bin/cp -n "$1" "$2"
+	fi
+}
+
+while [ $# -gt 1 ]; do
+	stableCopy "$1" "${!#}"
+	shift
+done

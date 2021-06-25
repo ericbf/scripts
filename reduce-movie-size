@@ -6,7 +6,7 @@ mkdir -p "$tmp"
 
 shrink() {
 	declare input="$1"
-	declare reduced="$tmp/${1%.*}_reduced.mp4"
+	declare reduced="$tmp/$(basename "$1" ".${1##*.}")_reduced.mp4"
 	declare new="${1%.*}.mp4"
 
 	if ! [ -e "$input" ]; then

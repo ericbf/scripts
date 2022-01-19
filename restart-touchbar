@@ -1,3 +1,4 @@
 #!/bin/zsh
 
-sudo pkill TouchBarServer; sudo killall ControlStrip
+sudo killall TouchBarServer
+sudo killall ControlStrip

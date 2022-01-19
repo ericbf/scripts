@@ -6,31 +6,13 @@ if [ $# -lt 1 ]; then
 	exit
 fi
 
-declare temp="$TMPDIR/encode-svg-temp.svg"
+declare tmp="$TMPDIR$(basename "$0")-$(uuidgen)"
+trap "rm -rf '$tmp';" EXIT
+mkdir -p "$tmp"
+
+declare temp_file="$tmp/temp.svg"
 declare text="$@"
-declare output="${text##*/}"
+declare output="${${text##*/}:0:30}"
 
-if [[ $text == *bible.com* ]]; then
-	# Set to lowercase
-	text="${text:l}"
-	output="${output:l}"
-
-	# Remove protocol
-	text="${text#*://}"
-
-	# Remove www, if present
-	text="${text#www.}"
-
-	# Remove "my", if present
-	text="${text#my.}"
-
-	# Remove "bible/", if present
-	text="${text/bible\//}"
-
-	# Remove the version at the end (the number in the URL already defines the version)
-	text="${text%.[a-zA-Z]?(?|??|???)}"
-fi
-
-npx qrcode-svg --ecl L --join --padding 0 --no-prettify "$text" > "$temp"
-inkscape "$temp" -o "$output.pdf"
-rm "$temp"
+npx qrcode-svg --ecl L --join --padding 0 --no-prettify "$text" > "$temp_file"
+inkscape "$temp_file" -o "$output.pdf"

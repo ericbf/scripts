@@ -1,0 +1,12 @@
+#!/bin/bash
+
+apply() {
+	if ! ffmpeg -v quiet -f lavfi -i color=c=black:s=128x96 -i "$1" -shortest -fflags +shortest "${1%.*}.mp4"; then
+		echo "Error adding empty video track to $1"
+	else
+		echo "Done with $1"
+	fi
+}
+
+export -f apply
+find "$@" -type f -print0 | xargs -0 file --mime-type | egrep 'audio' | cut -f1 -d : | tr '\n' '\0' | xargs -0 -P 6 -I{} bash -c 'apply "{}"'

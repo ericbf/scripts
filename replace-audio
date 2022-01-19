@@ -1,0 +1,9 @@
+#!/bin/zsh
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $(basename "$0") <video> <audio>"
+
+    exit
+fi
+
+ffmpeg -i "$1" -i "$2" -acodec copy -vcodec copy -map 0:v:0 -map 1:a:0 "${1%.*} (replaced audio).mov"

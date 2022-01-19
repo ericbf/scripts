@@ -1,0 +1,8 @@
+#!/bin/zsh
+
+if ! docker image list msftspeech/spx | grep msftspeech/spx > /dev/null; then
+	docker pull msftspeech/spx
+fi
+
+# docker run -it -v spx-config:/data --rm msftspeech/spx "$@"
+docker run -it -v "`pwd`":/data --rm msftspeech/spx "$@"

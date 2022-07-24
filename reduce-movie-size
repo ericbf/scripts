@@ -1,8 +1,30 @@
 #!/bin/bash
 
+declare my_name="$(basename "$0")"
+
+if [ $# -lt 1 ]; then
+	echo "usage: $my_name <path> [<path> ...]"
+
+	exit 1
+fi
+
 declare tmp="$TMPDIR$(basename "$0")-$(uuidgen)"
 trap "rm -rf '$tmp';" EXIT
 mkdir -p "$tmp"
+
+declare force pass_again
+
+if [ "$1" == "-f" ] || [ "$1" == "--force" ]; then
+	shift
+
+	force=0
+fi
+
+if [ "$1" == "-a" ] || [ "$1" == "--again" ]; then
+	shift
+
+	pass_again=0
+fi
 
 shrink() {
 	declare input="$1"
@@ -14,12 +36,27 @@ shrink() {
 		exit -1
 	fi
 
-	if ! ffmpeg -v quiet -i "$input" -pix_fmt yuv420p -vcodec libx264 -x264-params log-level=error -crf 28 "$reduced"; then
+	if ! $force && [ "X$(mdls -n MovieSizeReductionDidNothing "$input" | awk '{print $3}')" == 'X"0"' ]; then
+		echo "Already checked $input (reduction did nothing)"
+
+		exit 0
+	fi
+
+	if ! $pass_again && [ "X$(mdls -n MovieSizeReduced "$input" | awk '{print $3}')" == 'X"0"' ]; then
+		echo "Already reduced $input (pass -a or --again to pass over again)"
+
+		exit 0
+	fi
+
+	if ! ffmpeg -v quiet -i "$input" -pix_fmt yuv420p -movflags +faststart -tag:v hvc1 -vcodec libx265 -x265-params log-level=error -crf 26 "$reduced"; then
 		echo "Error reducing size of video"
 		exit -1
 	fi
 
-	if [ $(du -k "$reduced" | cut -f 1) -lt $(du -k "$input" | cut -f 1) ]; then
+	declare orig_size=$(du -k "$input" | cut -f 1)
+	declare new_size=$(du -k "$reduced" | cut -f 1)
+
+	if [ $new_size -lt $orig_size ]; then
 		# Move the old file to the trash and use the reduced file.
 		if ! osascript -e "tell application \"Finder\" to delete POSIX file \"${input}\"" &> /dev/null ; then
 			# If trashing fails, move to trash manually
@@ -27,14 +64,20 @@ shrink() {
 		fi
 
 		mv "$reduced" "$new"
+
+		xattr -w com.apple.metadata:MovieSizeReduced 0 "$new"
+
+		echo "Done with $input (down $(echo "(1 - $new_size / $orig_size) * 100" | bc -l | awk '{printf("%.1f\n",$1)}')%)"
 	else
 		# The "reduced" file is bigger—just delete it.
 		rm "$reduced"
-	fi
 
-	echo Done with $input
+		xattr -w com.apple.metadata:MovieSizeReductionDidNothing 0 "$input"
+
+		echo "Done with $input (no change)"
+	fi
 }
 export tmp
 export -f shrink
-find "$@" -type f -print0 | xargs -0 file --mime-type | egrep 'video' | cut -f1 -d : | tr '\n' '\0' | xargs -0 -P 6 -I{} bash -c 'shrink "{}"'
+find "$@" -type f -print0 | xargs -0 file --mime-type | egrep 'video' | cut -f1 -d : | tr '\n' '\0' | xargs -0 -P `nproc` -I{} bash -c 'shrink "{}"'
 

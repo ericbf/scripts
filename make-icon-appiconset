@@ -1,0 +1,154 @@
+#!/bin/zsh
+
+local name dir sizes parts
+typeset -a sizes parts
+sizes=(
+	"20x20@1x 20x20"
+	"83.5x83.5@2x 167x167"
+	"76x76@2x 152x152"
+	"76x76@1x 76x76"
+	"60x60@3x 180x180"
+	"60x60@2x 120x120"
+	"512@2x 1024x1024"
+	"40x40@3x 120x120"
+	"40x40@2x 80x80"
+	"40x40@2x-1 80x80"
+	"40x40@1x 40x40"
+	"29x29@3x 87x87"
+	"29x29@2x 58x58"
+	"29x29@2x-1 58x58"
+	"29x29@1x 29x29"
+	"20x20@3x 60x60"
+	"20x20@2x 40x40"
+	"20x20@2x-1 40x40"
+)
+
+name="${1:r}"
+dir="$name.appiconset"
+
+mkdir "$dir"
+
+for i ("$sizes[@]"); do
+	parts=("${(@s/ /)i}")
+
+	magick "$1" -resize $parts[2] "PNG32:$dir/$name-$parts[1].png"
+done
+
+cat > "$dir/Contents.json" << EOF
+{
+  "images" : [
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "$name-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "$name-20x20@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "$name-29x29@2x-1.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "$name-29x29@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "$name-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "$name-40x40@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "$name-60x60@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "$name-60x60@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "$name-20x20@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "$name-20x20@2x-1.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "$name-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "$name-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "$name-40x40@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "$name-40x40@2x-1.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "$name-76x76@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "$name-76x76@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "83.5x83.5",
+      "idiom" : "ipad",
+      "filename" : "$name-83.5x83.5@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "1024x1024",
+      "idiom" : "ios-marketing",
+      "filename" : "$name-512@2x.png",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+EOF

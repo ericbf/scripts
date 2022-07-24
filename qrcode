@@ -11,8 +11,17 @@ trap "rm -rf '$tmp';" EXIT
 mkdir -p "$tmp"
 
 declare temp_file="$tmp/temp.svg"
-declare text="$@"
 declare output="${${text##*/}:0:30}"
 
+if [ "$1" = "-o" ] || [ "$1" = "--out" ]; then
+	output="$2"
+
+	shift
+	shift
+fi
+
+declare text="$@"
+
+# For error correction level: L, M, Q, H
 npx qrcode-svg --ecl L --join --padding 0 --no-prettify "$text" > "$temp_file"
 inkscape "$temp_file" -o "$output.pdf"

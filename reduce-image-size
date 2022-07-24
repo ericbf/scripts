@@ -2,7 +2,7 @@
 
 const { tmpdir } = require("os")
 const { promises: fs } = require("fs")
-const { basename, extname, join } = require("path")
+const { basename, extname, join, dirname } = require("path")
 const { exec: originalExec } = require("child_process")
 
 /**
@@ -71,7 +71,9 @@ async function run() {
 					if (size < currentTarget * 1000000) {
 						console.log(`"${arg}" is already smaller than ${currentTarget}MB`)
 					} else {
-						let target = currentTarget
+						const target = currentTarget
+						const extension = extname(arg)
+						const base = basename(arg, extension)
 
 						const worker = async () => {
 							running += 1
@@ -80,7 +82,7 @@ async function run() {
 								await resize(
 									target * 1000000,
 									arg,
-									`${arg.replace(/\.[^.]+$/, "")} (${currentTarget}MB)${extname(arg)}`,
+									`${base} (${currentTarget}MB)${extension}`,
 									0,
 									100,
 									0,
@@ -119,7 +121,7 @@ async function run() {
 	/**
 	 * @param {number} target The target size
 	 * @param {string} file
-	 * @param {string} outFile
+	 * @param {string} outFilename
 	 * @param {number} lowerBound
 	 * @param {number} upperBound
 	 * @param {number} iteration
@@ -128,7 +130,7 @@ async function run() {
 	async function resize(
 		target = currentTarget,
 		file,
-		outFile,
+		outFilename,
 		lowerBound,
 		upperBound,
 		iteration,
@@ -140,7 +142,7 @@ async function run() {
 		const midpoint = (upperBound - lowerBound) / 2 + lowerBound
 
 		/** The temporary file in the temporary directory */
-		const tmpOutFile = join(tmp, outFile)
+		const tmpOutFile = join(tmp, outFilename)
 
 		// Resize the image to the midpoint between the current thresholds
 		await exec(`convert "${file}" -resize "${midpoint}%" "${tmpOutFile}"`)
@@ -152,7 +154,7 @@ async function run() {
 			return resize(
 				target,
 				file,
-				outFile,
+				outFilename,
 				currentSize === size ? lowerBound / 2 : lowerBound,
 				midpoint,
 				iteration + 1,
@@ -162,7 +164,7 @@ async function run() {
 			return resize(
 				target,
 				file,
-				outFile,
+				outFilename,
 				midpoint,
 				upperBound,
 				iteration + 1,
@@ -170,7 +172,7 @@ async function run() {
 			)
 		}
 
-		return fs.rename(tmpOutFile, outFile)
+		return fs.rename(tmpOutFile, join(dirname(file), outFilename))
 	}
 
 	function exit(code = 0) {

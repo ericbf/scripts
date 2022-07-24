@@ -1,0 +1,46 @@
+#!/bin/zsh
+
+local name dir sizes parts
+typeset -a sizes parts
+sizes=(
+  "2732x2732 2732x2732"
+  "2732x2732-1 2732x2732"
+  "2732x2732-2 2732x2732"
+)
+
+name="${1:r}"
+dir="$(echo $name | perl -pe 's/^./\u$&/g').imageset"
+
+mkdir "$dir"
+
+for i ("$sizes[@]"); do
+	parts=("${(@s/ /)i}")
+
+	magick "$1" -resize $parts[2] "PNG32:$dir/$name-$parts[1].png"
+done
+
+cat > "$dir/Contents.json" << EOF
+{
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "$name-2732x2732-2.png",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "$name-2732x2732-1.png",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "$name-2732x2732.png",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+EOF

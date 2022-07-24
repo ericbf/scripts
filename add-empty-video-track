@@ -9,4 +9,4 @@ apply() {
 }
 
 export -f apply
-find "$@" -type f -print0 | xargs -0 file --mime-type | egrep 'audio' | cut -f1 -d : | tr '\n' '\0' | xargs -0 -P 6 -I{} bash -c 'apply "{}"'
+find "$@" -type f -print0 | xargs -0 file --mime-type | egrep 'audio' | cut -f1 -d : | tr '\n' '\0' | xargs -0 -P `nproc` -I{} bash -c 'apply "{}"'

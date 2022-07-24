@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+
+const fs = require("fs")
+const path = require("path")
+const https = require("https")
+const token = fs
+	.readFileSync(`${__dirname}/.${path.basename(__filename)}.token`)
+	.toString()
+	.trim()
+
+const verses = process.argv.slice(2)
+const results = verses.map(() => undefined)
+
+for (const [i, verse] of verses.entries()) {
+	https
+		.get(
+			{
+				method: "GET",
+				protocol: "https:",
+				hostname: "api.esv.org",
+				path:
+					"/v3/passage/text/?" +
+					new URLSearchParams({
+						q: encodeURIComponent(verse),
+						"include-first-verse-numbers": false,
+						"include-footnotes": false,
+						"include-headings": false
+					}).toString(),
+				headers: {
+					authorization: `Token ${token}`
+				}
+			},
+			(resp) => {
+				let data = ""
+
+				// A chunk of data has been received.
+				resp.on("data", (chunk) => {
+					data += chunk
+				})
+
+				// The whole response has been received. Print out the result.
+				resp.on("end", () => {
+					/**
+					 * @type { string }
+					 */
+					const passage = JSON.parse(data).passages[0]
+
+					results[i] =
+						passage
+							?.replace(" (ESV)", "")
+							.replaceAll(/\n\n\s*\[[0-9]+\]/g, " (ESV):") || verses[i]
+
+					if (!results.includes(undefined)) {
+						for (result of results) {
+							console.log(result)
+							console.log("\n")
+						}
+					}
+				})
+			}
+		)
+		.on("error", (err) => {
+			console.log("Error: " + err.message)
+		})
+}
